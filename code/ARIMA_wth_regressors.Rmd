@@ -1,0 +1,33 @@
+---
+title: "5261-Project"
+author: "Bo Peng"
+date: "April 17, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(zoo)
+LIBOR <- read.csv("../data/1-Month_LIBOR_daily.csv", header = TRUE)
+LIBOR[,1] <- as.Date(LIBOR[,1], "%m/%d/%Y")
+SHIBOR <- read.csv("../data/SHIBOR.csv", header = TRUE)
+SHIBOR[,1] <- as.Date(SHIBOR[,1], "%m/%d/%Y")
+CSI300 <- read.csv("../data/CSI300_daily.csv", header = TRUE)
+CSI300[,1] <- as.Date(CSI300[,1], "%m/%d/%Y")
+GSPC <- read.csv("../data/S&P500(^GSPC)_daily.csv", header = TRUE)
+GSPC[,1] <- as.Date(GSPC[,1], "%m/%d/%Y")
+EX <- read.csv("../data/ExRate.csv", header = TRUE)
+EX[,1] <- as.Date(EX[,1], "%m/%d/%Y")
+TRADE <- read.csv("../data/Trade.csv", header = TRUE)
+TRADE[,1] <- as.Date(as.yearmon(TRADE[,1], "%Y/%m"))
+TRADE <- TRADE[order(TRADE[,1]),]
+M_US <- read.csv("../data/m1m2_US.csv", header = TRUE)
+M_US[,1] <- as.Date(as.yearmon(M_US[,1], "%Y-%m"))
+M_CN <- read.csv("../data/m1m2_China.csv", header = TRUE)
+M_CN[,1] <- as.Date(as.yearmon(M_CN[,1], "%Y-%m"))
+M_CN <- M_CN[order(M_CN[,1]),]
+```
+
