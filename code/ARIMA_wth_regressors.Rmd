@@ -5,29 +5,86 @@ date: "April 17, 2017"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+Read CSVs
+```{r}
+library(zoo)
+LIBOR <- read.csv("../data/1-Month_LIBOR_daily.csv", header = TRUE, as.is = T)
+LIBOR[,1] <- as.Date(LIBOR[,1], "%m/%d/%Y")
+SHIBOR <- read.csv("../data/SHIBOR.csv", header = TRUE, as.is = T)
+SHIBOR[,1] <- as.Date(SHIBOR[,1], "%m/%d/%Y")
+CSI300 <- read.csv("../data/CSI300_daily.csv", header = TRUE, as.is = T)
+CSI300[,1] <- as.Date(CSI300[,1], "%m/%d/%Y")
+GSPC <- read.csv("../data/S&P500(^GSPC)_daily.csv", header = TRUE, as.is = T)
+GSPC[,1] <- as.Date(GSPC[,1], "%m/%d/%Y")
+EX <- read.csv("../data/ExRate.csv", header = TRUE, as.is = T)
+EX[,1] <- as.Date(EX[,1], "%m/%d/%Y")
+TRADE <- read.csv("../data/Trade.csv", header = TRUE, as.is = T)
+TRADE[,1] <- as.Date(as.yearmon(TRADE[,1], "%Y/%m"))
+TRADE <- TRADE[order(TRADE[,1]),]
+M_US <- read.csv("../data/m1m2_US.csv", header = TRUE, as.is = T)
+M_US[,1] <- as.Date(as.yearmon(M_US[,1], "%Y-%m"))
+M_CN <- read.csv("../data/m1m2_China.csv", header = TRUE, as.is = T)
+M_CN[,1] <- as.Date(as.yearmon(M_CN[,1], "%Y-%m"))
+M_CN <- M_CN[order(M_CN[,1]),]
+LIBOR <- LIBOR[-nrow(LIBOR),]
+TRADE[1,1] <- TRADE[1,1]+1
+M_CN[1,1] <- M_CN[1,1]+1
+M_CN <- M_CN[-c(nrow(M_CN), nrow(M_CN)-1), ]
+M_US[1,1] <- M_US[1,1]+1
+```
+
+Or read RData
+```{r}
+library(zoo)
+load("data.RData")
+LIBOR <- LIBOR[-nrow(LIBOR),]
+TRADE[1,1] <- TRADE[1,1]+1
+M_CN[1,1] <- M_CN[1,1]+1
+M_CN <- M_CN[-c(nrow(M_CN), nrow(M_CN)-1), ]
+M_US[1,1] <- M_US[1,1]+1
+```
+
+Combine into main dataframe
+```{r}
+DATE <- seq(min(LIBOR[,1]), max(LIBOR[,1]), by="days")
+DATE <- data.frame(DATE)
+main <- merge(CSI300, DATE, by.x='Date', by.y='DATE', all.x=T, all.y=T)
+main <- merge(main, EX, by.x='Date', by.y='Date', all.x=T, all.y=T)
+main <- merge(main, GSPC, by.x='Date', by.y='Date', all.x=T, all.y=T)
+main <- merge(main, LIBOR, by.x='Date', by.y='DATE', all.x=T, all.y=T)
+main <- merge(main, M_CN, by.x='Date', by.y='Time.Period', all.x=T, all.y=T)
+main <- merge(main, M_US, by.x='Date', by.y='Time.Period', all.x=T, all.y=T)
+main <- merge(main, SHIBOR, by.x='Date', by.y='Date', all.x=T, all.y=T)
+colnames(main) <- c("Date", "CSI300", "RMBperUSD", "GSPC", "LIBOR", "m2_CN", "m1_CN", "m1_US", "m2_US", "SHIBOR")
+main <- main[, c("Date", "RMBperUSD", "SHIBOR", "LIBOR", "CSI300", "GSPC", "m1_CN", "m2_CN", "m1_US", "m2_US")]
+```
+
+Use interpolation to fill missing spaces
+```{r, warning=FALSE}
+for (i in 4:10) {
+  main[,i][is.na(main[,i])] <- "."
+  main[,i] <- as.numeric(paste(main[,i]))
+}
+
+for (i in 2:6) {
+  main[3:nrow(main),i] <- na.approx(main[3:nrow(main),i])
+}
+
+for (j in 7:10) {
+  for (i in 1:nrow(main)) {
+    if (is.na(main[i,j])) {
+      k <- max(which(is.na(main[1:i,j]) == FALSE))
+      main[i,j] <- main[k,j]
+    }
+  }
+}
+
+main <- main[-c(1,2),]
+save(main, file = "main.RData")
 ```
 
 ```{r}
 library(zoo)
-LIBOR <- read.csv("../data/1-Month_LIBOR_daily.csv", header = TRUE)
-LIBOR[,1] <- as.Date(LIBOR[,1], "%m/%d/%Y")
-SHIBOR <- read.csv("../data/SHIBOR.csv", header = TRUE)
-SHIBOR[,1] <- as.Date(SHIBOR[,1], "%m/%d/%Y")
-CSI300 <- read.csv("../data/CSI300_daily.csv", header = TRUE)
-CSI300[,1] <- as.Date(CSI300[,1], "%m/%d/%Y")
-GSPC <- read.csv("../data/S&P500(^GSPC)_daily.csv", header = TRUE)
-GSPC[,1] <- as.Date(GSPC[,1], "%m/%d/%Y")
-EX <- read.csv("../data/ExRate.csv", header = TRUE)
-EX[,1] <- as.Date(EX[,1], "%m/%d/%Y")
-TRADE <- read.csv("../data/Trade.csv", header = TRUE)
-TRADE[,1] <- as.Date(as.yearmon(TRADE[,1], "%Y/%m"))
-TRADE <- TRADE[order(TRADE[,1]),]
-M_US <- read.csv("../data/m1m2_US.csv", header = TRUE)
-M_US[,1] <- as.Date(as.yearmon(M_US[,1], "%Y-%m"))
-M_CN <- read.csv("../data/m1m2_China.csv", header = TRUE)
-M_CN[,1] <- as.Date(as.yearmon(M_CN[,1], "%Y-%m"))
-M_CN <- M_CN[order(M_CN[,1]),]
+load("main.RData")
 ```
 
