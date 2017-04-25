@@ -2,10 +2,12 @@
 title: "5261-Project"
 author: "Bo Peng"
 date: "April 17, 2017"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
-Read CSVs
+Read data
 ```{r}
 library(zoo)
 LIBOR <- read.csv("../data/1-Month_LIBOR_daily.csv", header = TRUE, as.is = T)
@@ -26,17 +28,6 @@ M_US[,1] <- as.Date(as.yearmon(M_US[,1], "%Y-%m"))
 M_CN <- read.csv("../data/m1m2_China.csv", header = TRUE, as.is = T)
 M_CN[,1] <- as.Date(as.yearmon(M_CN[,1], "%Y-%m"))
 M_CN <- M_CN[order(M_CN[,1]),]
-LIBOR <- LIBOR[-nrow(LIBOR),]
-TRADE[1,1] <- TRADE[1,1]+1
-M_CN[1,1] <- M_CN[1,1]+1
-M_CN <- M_CN[-c(nrow(M_CN), nrow(M_CN)-1), ]
-M_US[1,1] <- M_US[1,1]+1
-```
-
-Or read RData
-```{r}
-library(zoo)
-load("data.RData")
 LIBOR <- LIBOR[-nrow(LIBOR),]
 TRADE[1,1] <- TRADE[1,1]+1
 M_CN[1,1] <- M_CN[1,1]+1
@@ -83,21 +74,18 @@ main <- main[-c(1,2),]
 save(main, file = "main.RData")
 ```
 
-```{r}
-library(zoo)
-load("main.RData")
-```
-
+Scale regressors
 ```{r}
 main[,3:8] <- scale(main[,3:8])
 ```
 
-
+Divide dataset into training and test sets
 ```{r}
 train <- main[1:3500,]
 test <- main[3501:3709,]
 ```
 
+Arima model with regressors
 ```{r}
 library(zoo)
 library(forecast)
@@ -106,19 +94,23 @@ m <- auto.arima(train$RMBperUSD, xreg = train[,3:10])
 m
 ```
 
+Plot residuals
 ```{r}
 plot(m$residuals)
 ```
 
+Use model to forecast over test set
 ```{r}
 pred <- forecast(m, xreg = test[,3:10], h = 209)
 plot(pred, main = "Prediction using ARIMA model with regressors")
 ```
 
+Calculate mean test error
 ```{r}
 forecasted <- as.numeric(pred$mean)
 actual <- test$RMBperUSD
 errors <- (forecasted - actual)^2
 mse <- mean(errors)
+mse
 ```
 
