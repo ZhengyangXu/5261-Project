@@ -90,7 +90,15 @@ plot(x = main$Date, y = main$LIBOR, type = "l", xaxt = "n", xlab = "Date", ylab 
 axis(1, main$Date, format(main$Date, "%b %Y"), cex.axis = .8)
 ```
 
+```{r}
+plot(x = main$Date, y = main$CSI300, type = "l", xaxt = "n", ylab = "CSI300", main = "China Shanghai Index 300")
+axis(1, main$Date, format(main$Date, "%b %Y"), cex.axis = .8)
+```
 
+```{r}
+plot(x = main$Date, y = main$GSPC, type = "l", xaxt = "n", ylab = "GSPC", main = "Standard & Poor 500")
+axis(1, main$Date, format(main$Date, "%b %Y"), cex.axis = .8)
+```
 
 ```{r, warning=FALSE}
 m2_CN_ad <- c(0, log(diff(main$m2_CN)))
