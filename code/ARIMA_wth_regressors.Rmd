@@ -10,6 +10,7 @@ output:
 Read data
 ```{r}
 library(zoo)
+library(stats)
 LIBOR <- read.csv("../data/1-Month_LIBOR_daily.csv", header = TRUE, as.is = T)
 LIBOR[,1] <- as.Date(LIBOR[,1], "%m/%d/%Y")
 SHIBOR <- read.csv("../data/SHIBOR.csv", header = TRUE, as.is = T)
@@ -71,8 +72,46 @@ for (j in 7:10) {
 }
 
 main <- main[-c(1,2),]
+main <- main[3145:3709,]
 save(main, file = "main.RData")
 ```
+
+Plots
+```{r}
+plot(x = main$Date, y = main$RMBperUSD, type = "l", xaxt = "n", ylab = "RMB per USD", main = "Exchange Rate")
+axis(1, main$Date, format(main$Date, "%b %Y"), cex.axis = .8)
+```
+
+```{r}
+par(mfrow=c(2, 1))
+plot(x = main$Date, y = main$SHIBOR, type = "l", xaxt = "n", xlab = "", ylab = "SHIBOR")
+axis(1, main$Date, format(main$Date, "%b %Y"), cex.axis = .8)
+plot(x = main$Date, y = main$LIBOR, type = "l", xaxt = "n", xlab = "Date", ylab = "LIBOR")
+axis(1, main$Date, format(main$Date, "%b %Y"), cex.axis = .8)
+```
+
+
+
+```{r, warning=FALSE}
+m2_CN_ad <- c(0, log(diff(main$m2_CN)))
+m2_US_ad <- c(0, log(diff(main$m2_US)))
+m <- cbind(main$Date, m2_CN_ad, m2_US_ad)
+m <- as.data.frame(m)
+m[,1] <- as.Date(m[,1])
+m <- m[m$m2_CN_ad != (-Inf),]
+m <- m[m$m2_CN_ad != 0,]
+m <- m[m$m2_US_ad != (-Inf),]
+m <- na.omit(m)
+```
+
+```{r}
+par(mfrow=c(2, 1))
+plot(x= m$V1, y = m$m2_CN_ad, type = "l", xaxt = "n", ylab = "Log Difference", main = "Rate of Increasae of China's M2", xlab = "")
+axis(1, m$V1, format(m$V1, "%b %Y"), cex.axis = .8)
+plot(x= m$V1, y = m$m2_US_ad, type = "l", xaxt = "n", ylab = "Log Difference", main = "Rate of Increasae of US's M2", xlab = "Date")
+axis(1, m$V1, format(m$V1, "%b %Y"), cex.axis = .8)
+```
+
 
 Scale regressors
 ```{r}
@@ -81,12 +120,16 @@ main[,3:8] <- scale(main[,3:8])
 
 Divide dataset into training and test sets
 ```{r}
-train <- main[1:3500,]
-test <- main[3501:3709,]
+train <- main[1:510,]
+test <- main[511:565,]
 ```
 
+
+
+
+
 Arima model with regressors
-```{r}
+```{r, warning=FALSE}
 library(zoo)
 library(forecast)
 
@@ -101,7 +144,7 @@ plot(m$residuals)
 
 Use model to forecast over test set
 ```{r}
-pred <- forecast(m, xreg = test[,3:10], h = 209)
+pred <- forecast(m, xreg = test[,3:10], h = 55)
 plot(pred, main = "Prediction using ARIMA model with regressors")
 ```
 
